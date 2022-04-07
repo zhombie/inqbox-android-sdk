@@ -1,0 +1,17 @@
+android {
+    defaultConfig {
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+}
+
+ext {
+    retrofit_version = '2.9.0'
+}
+
+dependencies {
+    // Retrofit + Gson
+    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+
+    // InQBox (SDK)
+    implementation project(":domain")
+}

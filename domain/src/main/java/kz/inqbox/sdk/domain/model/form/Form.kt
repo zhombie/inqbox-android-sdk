@@ -124,13 +124,7 @@ data class Form constructor(
     @Parcelize
     data class Configs constructor(
         val assignees: List<Long>? = null,
-        val projectId: Long = NO_PROJECT_ID
-    ) : Parcelable {
-
-        companion object {
-            const val NO_PROJECT_ID = -1L
-        }
-
-    }
+        val projectId: Long? = null
+    ) : Parcelable
 
 }
