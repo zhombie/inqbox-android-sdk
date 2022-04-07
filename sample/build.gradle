@@ -1,0 +1,136 @@
+plugins {
+    id 'com.android.application'
+
+    id 'kotlin-android'
+}
+
+def properties = new Properties()
+properties.load(new FileInputStream(rootProject.file('local.properties')))
+def socketBaseUrl = properties.getProperty('socket.base_url')
+
+android {
+    compileSdkVersion 31
+
+    defaultConfig {
+        applicationId "kz.inqbox.sdk.sample"
+
+        minSdkVersion 23
+        targetSdkVersion 31
+
+        versionCode project.ext.version_code
+        versionName project.version
+    }
+
+    buildTypes {
+        debug {
+            // Define constants
+            buildConfigField 'String', 'SOCKET_BASE_URL', socketBaseUrl
+
+            minifyEnabled false
+
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        release {
+            // Define constants
+            buildConfigField 'String', 'SOCKET_BASE_URL', socketBaseUrl
+
+            minifyEnabled false
+
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+
+    configurations.all {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion kotlin_version
+            }
+        }
+    }
+}
+
+ext {
+    garage_version = '1.2.5'
+}
+
+dependencies {
+    // Activity
+    implementation 'androidx.activity:activity-ktx:1.4.0'
+
+    // AppCompat
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+
+    // Core
+    implementation 'androidx.core:core-ktx:1.7.0'
+
+    // Fragment
+    implementation 'androidx.fragment:fragment-ktx:1.4.1'
+
+    // Garage (SDK)
+    implementation "com.github.zhombie.garage:activity:$garage_version"
+    implementation "com.github.zhombie.garage:animation-funhouse:$garage_version"
+    implementation "com.github.zhombie.garage:animation-scale:$garage_version"
+    implementation "com.github.zhombie.garage:chat:$garage_version"
+    implementation "com.github.zhombie.garage:context:$garage_version"
+    implementation "com.github.zhombie.garage:drawable:$garage_version"
+    implementation "com.github.zhombie.garage:file-extension:$garage_version"
+    implementation "com.github.zhombie.garage:file-size:$garage_version"
+    implementation "com.github.zhombie.garage:fragment:$garage_version"
+    implementation "com.github.zhombie.garage:gson:$garage_version"
+    implementation "com.github.zhombie.garage:json:$garage_version"
+    implementation "com.github.zhombie.garage:kotlin:$garage_version"
+    implementation "com.github.zhombie.garage:lifecycle-livedata:$garage_version"
+    implementation "com.github.zhombie.garage:lifecycle-viewmodel:$garage_version"
+    implementation "com.github.zhombie.garage:locale:$garage_version"
+    implementation "com.github.zhombie.garage:location-compass:$garage_version"
+    implementation "com.github.zhombie.garage:location-core:$garage_version"
+    implementation "com.github.zhombie.garage:location-gms:$garage_version"
+    implementation "com.github.zhombie.garage:material-tablayout:$garage_version"
+    implementation "com.github.zhombie.garage:multimedia-store:$garage_version"
+    implementation "com.github.zhombie.garage:permission:$garage_version"
+    implementation "com.github.zhombie.garage:popup-tooltip:$garage_version"
+    implementation "com.github.zhombie.garage:recyclerview:$garage_version"
+    implementation "com.github.zhombie.garage:text:$garage_version"
+    implementation "com.github.zhombie.garage:textview:$garage_version"
+    implementation "com.github.zhombie.garage:view:$garage_version"
+    implementation "com.github.zhombie.garage:window:$garage_version"
+    
+    // Material Design Components
+    implementation "com.google.android.material:material:1.5.0"
+
+    // Firebase Analytics
+    implementation 'com.google.firebase:firebase-analytics-ktx:20.1.2'
+
+    // LeakCanary
+    // debugImplementation because LeakCanary should only run in debug builds
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.8.1'
+
+    // OkHTTPClient
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:okhttp-tls:4.9.3'
+
+    // Library
+    def isRemoteDependencyEnabled = false
+
+    if (isRemoteDependencyEnabled) {
+        def library_version = project.version
+        // TODO: Remote dependencies
+    } else {
+        implementation project(':domain')
+        implementation project(':socket')
+    }
+}
