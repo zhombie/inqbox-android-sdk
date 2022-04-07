@@ -36,7 +36,7 @@ inline val Document.representation: Int
         Extension.TXT -> R.string.text_file
         Extension.DOC, Extension.DOCX -> R.string.microsoft_word_document
         Extension.XLS, Extension.XLSX -> R.string.microsoft_excel_document
-        // TODO: Support PPT, PPTX
+        Extension.PPT, Extension.PPTX -> R.string.microsoft_power_point_document
         Extension.PDF -> R.string.pdf_file
         Extension.HTML -> R.string.html_text
         else -> R.string.file

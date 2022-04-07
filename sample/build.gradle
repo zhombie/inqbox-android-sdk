@@ -64,7 +64,7 @@ android {
 }
 
 ext {
-    garage_version = '1.2.5'
+    garage_version = '1.2.7'
 }
 
 dependencies {
