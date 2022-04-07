@@ -6,7 +6,7 @@ plugins {
 
 def properties = new Properties()
 properties.load(new FileInputStream(rootProject.file('local.properties')))
-def socketBaseUrl = properties.getProperty('socket.base_url')
+def socketBaseUrl = properties.getProperty('socket.base_url') ?: '"http://localhost"'
 
 android {
     compileSdkVersion 31
