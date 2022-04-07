@@ -7,7 +7,10 @@ object Socket {
     private var isLoggingEnabled: Boolean = false
     private var language: Language = Language.DEFAULT
 
-    fun init(isLoggingEnabled: Boolean, language: Language): Boolean {
+    fun init(
+        isLoggingEnabled: Boolean = false,
+        language: Language = Language.DEFAULT
+    ): Boolean {
         return setLoggingEnabled(isLoggingEnabled) && setLanguage(language)
     }
 

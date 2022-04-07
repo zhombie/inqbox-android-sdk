@@ -4,7 +4,9 @@ object WebRTC {
 
     private var isLoggingEnabled: Boolean = false
 
-    fun init(isLoggingEnabled: Boolean): Boolean {
+    fun init(
+        isLoggingEnabled: Boolean = false
+    ): Boolean {
         return setLoggingEnabled(isLoggingEnabled)
     }
 

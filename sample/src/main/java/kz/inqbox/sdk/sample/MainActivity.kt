@@ -2,7 +2,8 @@ package kz.inqbox.sdk.sample
 
 import kz.garage.activity.intent.startActivity
 import kz.garage.kotlin.simpleNameOf
-import kz.inqbox.sdk.sample.samples.SocketActivity
+import kz.inqbox.sdk.sample.samples.socket.SocketActivity
+import kz.inqbox.sdk.sample.samples.webrtc.WebRTCActivity
 
 class MainActivity : BaseNestedModuleActivity() {
 
@@ -17,12 +18,15 @@ class MainActivity : BaseNestedModuleActivity() {
     override fun getSamples(): List<Sample> =
         listOf(
             Sample("socket", "Socket", null),
+            Sample("webrtc", "WebRTC", null),
         )
 
     override fun onSampleClicked(sample: Sample) {
         when (sample.id) {
             "socket" ->
                 startActivity<SocketActivity>()
+            "webrtc" ->
+                startActivity<WebRTCActivity>()
         }
     }
 

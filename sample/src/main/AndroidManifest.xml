@@ -22,7 +22,11 @@
         </activity>
 
         <!-- socket -->
-        <activity android:name=".samples.SocketActivity" />
+        <activity android:name=".samples.socket.SocketActivity" />
+
+        <!-- webrtc -->
+        <activity android:name=".samples.webrtc.WebRTCActivity" />
+        <activity android:name=".samples.webrtc.PreviewActivity" />
 
     </application>
 

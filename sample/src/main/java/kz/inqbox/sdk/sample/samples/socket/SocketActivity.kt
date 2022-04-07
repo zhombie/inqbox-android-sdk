@@ -1,4 +1,4 @@
-package kz.inqbox.sdk.sample.samples
+package kz.inqbox.sdk.sample.samples.socket
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -46,8 +46,6 @@ class SocketActivity : AppCompatActivity(), SocketStateListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_socket)
-
-        Socket.init(isLoggingEnabled = true, language = Language.RUSSIAN)
 
         statusView.text = "Status: IDLE"
         button.text = "Connect"
