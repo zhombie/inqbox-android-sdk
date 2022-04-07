@@ -20,7 +20,6 @@ import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 import java.lang.ref.WeakReference
 import java.util.concurrent.Callable
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class PeerConnectionClient private constructor(
@@ -59,7 +58,7 @@ class PeerConnectionClient private constructor(
         }
     }
 
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor()
 
     private var iceServers: List<PeerConnection.IceServer>? = null
 
@@ -257,10 +256,11 @@ class PeerConnectionClient private constructor(
             .createAudioDeviceModule()
     }
 
-    fun setLocalSurfaceView(localSurfaceView: SurfaceViewRenderer?) {
-        Logger.debug(TAG, "setLocalSurfaceView() -> $localSurfaceView")
+    fun setLocalSurfaceView(surfaceView: SurfaceViewRenderer?): Boolean {
+        Logger.debug(TAG, "setLocalSurfaceView() -> $surfaceView")
 
-        this.localSurfaceViewRenderer = localSurfaceView
+        localSurfaceViewRenderer = surfaceView
+        return localSurfaceViewRenderer == surfaceView
     }
 
     fun initLocalCameraStream(
@@ -289,10 +289,11 @@ class PeerConnectionClient private constructor(
         return true
     }
 
-    fun setRemoteSurfaceView(remoteSurfaceView: SurfaceViewRenderer?) {
-        Logger.debug(TAG, "setRemoteSurfaceView() -> $remoteSurfaceView")
+    fun setRemoteSurfaceView(surfaceView: SurfaceViewRenderer?): Boolean {
+        Logger.debug(TAG, "setRemoteSurfaceView() -> $surfaceView")
 
-        this.remoteSurfaceViewRenderer = remoteSurfaceView
+        remoteSurfaceViewRenderer = surfaceView
+        return remoteSurfaceViewRenderer == surfaceView
     }
 
     fun initRemoteCameraStream(
@@ -361,7 +362,7 @@ class PeerConnectionClient private constructor(
         return isStreamAdded
     }
 
-    fun addRemoteStreamToPeer(mediaStream: MediaStream) {
+    fun addRemoteStreamToPeer(mediaStream: MediaStream): Boolean {
         Logger.debug(TAG, "addRemoteStreamToPeer() -> mediaStream: $mediaStream")
 
         try {
@@ -369,28 +370,32 @@ class PeerConnectionClient private constructor(
             Logger.debug(TAG, "addRemoteStreamToPeer() [MediaStream exists] -> id: $id")
         } catch (e: IllegalStateException) {
             Logger.debug(TAG, "addRemoteStreamToPeer() [MediaStream does not exist]")
-            return
+            return false
         }
 
-        remoteMediaStream = mediaStream
+        executor.execute {
+            remoteMediaStream = mediaStream
 
-        if (mediaStream.audioTracks.isNotEmpty()) {
-            remoteAudioTrack = mediaStream.audioTracks.first()
-            remoteAudioTrack?.setEnabled(options.isRemoteAudioEnabled)
-        }
+            if (mediaStream.audioTracks.isNotEmpty()) {
+                remoteAudioTrack = mediaStream.audioTracks.first()
+                remoteAudioTrack?.setEnabled(options.isRemoteAudioEnabled)
+            }
 
-        if (mediaStream.videoTracks.isNotEmpty()) {
-            remoteVideoTrack = mediaStream.videoTracks.first()
-            remoteVideoTrack?.setEnabled(options.isRemoteVideoEnabled)
+            if (mediaStream.videoTracks.isNotEmpty()) {
+                remoteVideoTrack = mediaStream.videoTracks.first()
+                remoteVideoTrack?.setEnabled(options.isRemoteVideoEnabled)
 
-            if (remoteSurfaceViewRenderer == null) {
-                Logger.error(TAG, "Remote SurfaceViewRenderer is null.")
-            } else {
-                remoteVideoSink = ProxyVideoSink("RemoteVideoSink")
-                remoteVideoSink?.setTarget(remoteSurfaceViewRenderer)
-                remoteVideoTrack?.addSink(remoteVideoSink)
+                if (remoteSurfaceViewRenderer == null) {
+                    Logger.error(TAG, "Remote SurfaceViewRenderer is null.")
+                } else {
+                    remoteVideoSink = ProxyVideoSink("RemoteVideoSink")
+                    remoteVideoSink?.setTarget(remoteSurfaceViewRenderer)
+                    remoteVideoTrack?.addSink(remoteVideoSink)
+                }
             }
         }
+
+        return true
     }
 
     private fun startAudioManager() {
@@ -412,34 +417,48 @@ class PeerConnectionClient private constructor(
             return null
         }
 
-        surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase?.eglBaseContext)
+        return executor.submit(Callable {
+            surfaceTextureHelper =
+                SurfaceTextureHelper.create("CaptureThread", eglBase?.eglBaseContext)
 
-        localVideoSource = peerConnectionFactory?.createVideoSource(false)
+            localVideoSource = peerConnectionFactory?.createVideoSource(false)
 
-        if (localVideoSource == null) {
-            Logger.error(TAG, "Local VideoSource is null.")
-            return null
-        }
+            if (localVideoSource == null) {
+                Logger.error(TAG, "Local VideoSource is null.")
+                return@Callable null
+            }
 
-        localVideoCapturer = try {
-            createVideoCapturer()
-        } catch (e: Exception) {
-            listener?.onLocalVideoCapturerCreateError(e)
-            return null
-        }
+            localVideoCapturer = try {
+                createVideoCapturer()
+            } catch (e: Exception) {
+                listener?.onLocalVideoCapturerCreateError(e)
+                return@Callable null
+            }
 
-        localVideoCapturer?.initialize(surfaceTextureHelper, context, localVideoSource?.capturerObserver)
+            localVideoCapturer?.initialize(
+                surfaceTextureHelper,
+                context,
+                localVideoSource?.capturerObserver
+            )
 
-        localVideoCapturer?.startCapture(options.localVideoWidth, options.localVideoHeight, options.localVideoFPS)
+            localVideoCapturer?.startCapture(
+                options.localVideoWidth,
+                options.localVideoHeight,
+                options.localVideoFPS
+            )
 
-        localVideoTrack = peerConnectionFactory?.createVideoTrack(options.localVideoTrackId, localVideoSource)
-        localVideoTrack?.setEnabled(options.isLocalVideoEnabled)
+            localVideoTrack = peerConnectionFactory?.createVideoTrack(
+                options.localVideoTrackId,
+                localVideoSource
+            )
+            localVideoTrack?.setEnabled(options.isLocalVideoEnabled)
 
-        localVideoSink = ProxyVideoSink("LocalVideoSink")
-        localVideoSink?.setTarget(localSurfaceViewRenderer)
-        localVideoTrack?.addSink(localVideoSink)
+            localVideoSink = ProxyVideoSink("LocalVideoSink")
+            localVideoSink?.setTarget(localSurfaceViewRenderer)
+            localVideoTrack?.addSink(localVideoSink)
 
-        return localVideoTrack
+            return@Callable localVideoTrack
+        }).get()
     }
 
     private fun createAudioTrack(): AudioTrack? {
@@ -447,12 +466,17 @@ class PeerConnectionClient private constructor(
 
         Logger.debug(TAG, "Audio constraints: ${getAudioMediaConstraints()}")
 
-        localAudioSource = peerConnectionFactory?.createAudioSource(getAudioMediaConstraints())
+        return executor.submit(Callable{
+            localAudioSource = peerConnectionFactory?.createAudioSource(getAudioMediaConstraints())
 
-        localAudioTrack = peerConnectionFactory?.createAudioTrack(options.localAudioTrackId, localAudioSource)
-        localAudioTrack?.setEnabled(options.isLocalAudioEnabled)
+            localAudioTrack = peerConnectionFactory?.createAudioTrack(
+                options.localAudioTrackId,
+                localAudioSource
+            )
+            localAudioTrack?.setEnabled(options.isLocalAudioEnabled)
 
-        return localAudioTrack
+            return@Callable localAudioTrack
+        }).get()
     }
 
     private fun createVideoCapturer(): VideoCapturer? {
@@ -594,9 +618,7 @@ class PeerConnectionClient private constructor(
             override fun onIceConnectionChange(iceConnectionState: PeerConnection.IceConnectionState) {
                 Logger.debug(TAG, "onIceConnectionChange() -> $iceConnectionState")
 
-                executor.execute {
-                    listener?.onIceConnectionChange(IceConnectionStateMapper.map(iceConnectionState))
-                }
+                listener?.onIceConnectionChange(IceConnectionStateMapper.map(iceConnectionState))
             }
 
             override fun onIceConnectionReceivingChange(b: Boolean) {
@@ -610,14 +632,12 @@ class PeerConnectionClient private constructor(
             override fun onIceCandidate(iceCandidate: IceCandidate) {
                 Logger.debug(TAG, "onIceCandidate() -> iceCandidate: $iceCandidate")
 
-                executor.execute {
-                    listener?.onLocalIceCandidate(
-                        IceCandidateMapper.map(
-                            iceCandidate,
-                            AdapterTypeMapper.map(iceCandidate.adapterType)
-                        )
+                listener?.onLocalIceCandidate(
+                    IceCandidateMapper.map(
+                        iceCandidate,
+                        AdapterTypeMapper.map(iceCandidate.adapterType)
                     )
-                }
+                )
             }
 
             override fun onIceCandidatesRemoved(iceCandidates: Array<IceCandidate>) {
@@ -627,17 +647,13 @@ class PeerConnectionClient private constructor(
             override fun onAddStream(mediaStream: MediaStream) {
                 Logger.debug(TAG, "onAddStream() -> mediaStream: $mediaStream")
 
-                executor.execute {
-                    listener?.onAddRemoteStream(mediaStream)
-                }
+                listener?.onAddRemoteStream(mediaStream)
             }
 
             override fun onRemoveStream(mediaStream: MediaStream) {
                 Logger.debug(TAG, "onRemoveStream() -> mediaStream: $mediaStream")
 
-                executor.execute {
-                    listener?.onRemoveStream(mediaStream)
-                }
+                listener?.onRemoveStream(mediaStream)
             }
 
             override fun onDataChannel(dataChannel: DataChannel) {
@@ -647,9 +663,7 @@ class PeerConnectionClient private constructor(
             override fun onRenegotiationNeeded() {
                 Logger.debug(TAG, "onRenegotiationNeeded()")
 
-                executor.execute {
-                    listener?.onRenegotiationNeeded()
-                }
+                listener?.onRenegotiationNeeded()
             }
 
             override fun onAddTrack(
@@ -754,9 +768,9 @@ class PeerConnectionClient private constructor(
         return options.localVideoHeight == height
     }
 
-    fun isHDLocalVideo(): Boolean {
-        return options.isLocalVideoEnabled && options.localVideoWidth * options.localVideoHeight >= 1280 * 720
-    }
+    fun isHDLocalVideo(): Boolean =
+        options.isLocalVideoEnabled &&
+                options.localVideoWidth * options.localVideoHeight >= 1280 * 720
 
     fun setLocalTextureSize(textureWidth: Int, textureHeight: Int) {
         surfaceTextureHelper?.setTextureSize(textureWidth, textureHeight)
@@ -835,23 +849,31 @@ class PeerConnectionClient private constructor(
     }
 
     fun startLocalVideoCapture() {
-        localVideoCapturer?.startCapture(
-            options.localVideoWidth,
-            options.localVideoHeight,
-            options.localVideoFPS
-        )
+        executor.execute {
+            localVideoCapturer?.startCapture(
+                options.localVideoWidth,
+                options.localVideoHeight,
+                options.localVideoFPS
+            )
+        }
     }
 
     fun stopLocalVideoCapture() {
-        localVideoCapturer?.stopCapture()
+        executor.execute {
+            localVideoCapturer?.stopCapture()
+        }
     }
 
     fun setLocalVideoStreamMirror(isMirrored: Boolean) {
-        localSurfaceViewRenderer?.setMirror(isMirrored)
+        executor.execute {
+            localSurfaceViewRenderer?.setMirror(isMirrored)
+        }
     }
 
     fun setRemoteVideoStreamMirror(isMirrored: Boolean) {
-        remoteSurfaceViewRenderer?.setMirror(isMirrored)
+        executor.execute {
+            remoteSurfaceViewRenderer?.setMirror(isMirrored)
+        }
     }
 
     fun getAudioOutputDevices(): Set<RTCAudioManager.AudioDevice>? =
@@ -869,14 +891,18 @@ class PeerConnectionClient private constructor(
     }
 
     private fun selectAudioDeviceInternally(audioDevice: RTCAudioManager.AudioDevice) {
-        audioManager?.selectAudioDevice(audioDevice)
+        runOnUiThread {
+            audioManager?.selectAudioDevice(audioDevice)
+        }
     }
 
     fun removeListeners() {
         listener = null
     }
 
-    fun dispose() {
+    fun dispose(): Boolean {
+        if (executor.isShutdown) return false
+
         audioDeviceModule?.release()
         audioDeviceModule = null
 
@@ -1011,6 +1037,10 @@ class PeerConnectionClient private constructor(
 //                e.printStackTrace()
 //            }
         }
+
+        executor.shutdown()
+
+        return true
     }
 
     private fun reportError(errorMessage: String) {
@@ -1174,7 +1204,9 @@ class PeerConnectionClient private constructor(
     }
 
     interface Listener {
-        fun onLocalSessionDescription(sessionDescription: kz.inqbox.sdk.domain.model.webrtc.SessionDescription)
+        fun onLocalSessionDescription(
+            sessionDescription: kz.inqbox.sdk.domain.model.webrtc.SessionDescription
+        )
         fun onLocalIceCandidate(iceCandidate: kz.inqbox.sdk.domain.model.webrtc.IceCandidate)
         fun onIceConnectionChange(iceConnectionState: IceConnectionState)
         fun onRenegotiationNeeded()

@@ -41,6 +41,8 @@ class PreviewActivity : AppCompatActivity() {
 
     private val fullSurfaceViewRenderer by bind<SurfaceViewRenderer>(R.id.fullSurfaceViewRenderer)
     private val miniSurfaceViewRenderer by bind<SurfaceViewRenderer>(R.id.miniSurfaceViewRenderer)
+    private val startOrStopButton by bind<MaterialButton>(R.id.startOrStopButton)
+    private val mirrorButton by bind<MaterialButton>(R.id.mirrorButton)
     private val switchButton by bind<MaterialButton>(R.id.switchButton)
     private val shutdownButton by bind<MaterialButton>(R.id.shutdownButton)
 
@@ -98,10 +100,31 @@ class PreviewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preview)
 
-        var isSet = false
+        var isStarted = true
+        startOrStopButton.setOnClickListener {
+            isStarted = if (isStarted) {
+                peerConnectionClient?.stopLocalVideoCapture()
+                false
+            } else {
+                peerConnectionClient?.startLocalVideoCapture()
+                true
+            }
+        }
 
+        var isMirrored = true
+        mirrorButton.setOnClickListener {
+            isMirrored = if (isMirrored) {
+                peerConnectionClient?.setLocalVideoStreamMirror(false)
+                false
+            } else {
+                peerConnectionClient?.setLocalVideoStreamMirror(true)
+                true
+            }
+        }
+
+        var isStreamSet = false
         switchButton.setOnClickListener {
-            isSet = if (isSet) {
+            isStreamSet = if (isStreamSet) {
                 peerConnectionClient?.setLocalVideoSink(
                     surfaceViewRenderer = fullSurfaceViewRenderer,
                     isMirrored = true,

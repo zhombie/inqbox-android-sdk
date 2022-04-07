@@ -11,10 +11,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import kz.garage.activity.view.bind
 import kz.garage.kotlin.simpleNameOf
-import kz.inqbox.sdk.domain.model.language.Language
 import kz.inqbox.sdk.sample.BuildConfig
 import kz.inqbox.sdk.sample.R
-import kz.inqbox.sdk.socket.Socket
 import kz.inqbox.sdk.socket.SocketClient
 import kz.inqbox.sdk.socket.listener.SocketStateListener
 import kz.inqbox.sdk.socket.repository.SocketRepository
@@ -105,6 +103,10 @@ class SocketActivity : AppCompatActivity(), SocketStateListener {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        if (!executor.isShutdown) {
+            executor.shutdown()
+        }
 
         socketRepository?.removeAllListeners()
         socketRepository?.release()
