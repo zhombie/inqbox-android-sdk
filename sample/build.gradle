@@ -6,7 +6,7 @@ plugins {
 
 def properties = new Properties()
 properties.load(new FileInputStream(rootProject.file('local.properties')))
-def socketBaseUrl = properties.getProperty('socket.base_url') ?: '"http://localhost"'
+def socketUrl = properties.getProperty('socket.url') ?: '"http://localhost"'
 
 android {
     compileSdkVersion 31
@@ -24,7 +24,7 @@ android {
     buildTypes {
         debug {
             // Define constants
-            buildConfigField 'String', 'SOCKET_BASE_URL', socketBaseUrl
+            buildConfigField 'String', 'SOCKET_URL', socketUrl
 
             minifyEnabled false
 
@@ -33,7 +33,7 @@ android {
 
         release {
             // Define constants
-            buildConfigField 'String', 'SOCKET_BASE_URL', socketBaseUrl
+            buildConfigField 'String', 'SOCKET_URL', socketUrl
 
             minifyEnabled false
 

@@ -20,12 +20,16 @@ import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 import java.lang.ref.WeakReference
 import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class PeerConnectionClient private constructor(
     private val contextReference: WeakReference<Context>,
 
     var options: Options = Options(),
+
+    ioThread: ExecutorService? = null,
+    uiThread: Handler? = null,
 
     var localSurfaceViewRenderer: SurfaceViewRenderer? = null,
     var remoteSurfaceViewRenderer: SurfaceViewRenderer? = null
@@ -38,11 +42,15 @@ class PeerConnectionClient private constructor(
     constructor(
         context: Context,
         options: Options = Options(),
+        ioThread: ExecutorService? = null,
+        uiThread: Handler? = null,
         localSurfaceViewRenderer: SurfaceViewRenderer? = null,
         remoteSurfaceViewRenderer: SurfaceViewRenderer? = null
     ) : this(
         contextReference = WeakReference(context),
         options = options,
+        ioThread = ioThread,
+        uiThread = uiThread,
         localSurfaceViewRenderer = localSurfaceViewRenderer,
         remoteSurfaceViewRenderer = remoteSurfaceViewRenderer
     )
@@ -50,7 +58,7 @@ class PeerConnectionClient private constructor(
     private val context: Context?
         get() = contextReference.get()
 
-    private val uiThread: Handler by lazy(LazyThreadSafetyMode.NONE) {
+    private val uiThread: Handler = uiThread ?: run {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             Handler.createAsync(Looper.getMainLooper())
         } else {
@@ -58,7 +66,7 @@ class PeerConnectionClient private constructor(
         }
     }
 
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = ioThread ?: Executors.newSingleThreadExecutor()
 
     private var iceServers: List<PeerConnection.IceServer>? = null
 
@@ -466,7 +474,7 @@ class PeerConnectionClient private constructor(
 
         Logger.debug(TAG, "Audio constraints: ${getAudioMediaConstraints()}")
 
-        return executor.submit(Callable{
+        return executor.submit(Callable {
             localAudioSource = peerConnectionFactory?.createAudioSource(getAudioMediaConstraints())
 
             localAudioTrack = peerConnectionFactory?.createAudioTrack(
@@ -607,7 +615,8 @@ class PeerConnectionClient private constructor(
         rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED
         rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
         rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
-        rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
+        rtcConfig.continualGatheringPolicy =
+            PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
         rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL
 
         val peerConnectionObserver = object : PeerConnection.Observer {
@@ -816,7 +825,11 @@ class PeerConnectionClient private constructor(
         isZOrderMediaOverlay: Boolean = true
     ): Boolean {
         localSurfaceViewRenderer = surfaceViewRenderer
-        return if (initLocalCameraStream(isMirrored = isMirrored, isZOrderMediaOverlay = isZOrderMediaOverlay)) {
+        return if (initLocalCameraStream(
+                isMirrored = isMirrored,
+                isZOrderMediaOverlay = isZOrderMediaOverlay
+            )
+        ) {
             localVideoSink?.setTarget(localSurfaceViewRenderer) == true
         } else {
             false
@@ -829,7 +842,11 @@ class PeerConnectionClient private constructor(
         isZOrderMediaOverlay: Boolean = true
     ): Boolean {
         remoteSurfaceViewRenderer = surfaceViewRenderer
-        return if (initRemoteCameraStream(isMirrored = isMirrored, isZOrderMediaOverlay = isZOrderMediaOverlay)) {
+        return if (initRemoteCameraStream(
+                isMirrored = isMirrored,
+                isZOrderMediaOverlay = isZOrderMediaOverlay
+            )
+        ) {
             remoteVideoSink?.setTarget(remoteSurfaceViewRenderer) == true
         } else {
             false
@@ -1191,9 +1208,10 @@ class PeerConnectionClient private constructor(
         addConstraints(offerAnswerConstraints)
     }
 
-    private fun getOfferAnswerRestartConstraints(): MediaConstraints = getOfferAnswerConstraints().apply {
-        mandatory.add(OfferAnswerConstraints.ICE_RESTART.toKeyValuePair(true))
-    }
+    private fun getOfferAnswerRestartConstraints(): MediaConstraints =
+        getOfferAnswerConstraints().apply {
+            mandatory.add(OfferAnswerConstraints.ICE_RESTART.toKeyValuePair(true))
+        }
 
     private fun MediaConstraints.addConstraints(constraints: RTCConstraints<*, *>): Boolean {
         return mandatory.addAll(constraints.mandatoryKeyValuePairs) && optional.addAll(constraints.optionalKeyValuePairs)
@@ -1207,6 +1225,7 @@ class PeerConnectionClient private constructor(
         fun onLocalSessionDescription(
             sessionDescription: kz.inqbox.sdk.domain.model.webrtc.SessionDescription
         )
+
         fun onLocalIceCandidate(iceCandidate: kz.inqbox.sdk.domain.model.webrtc.IceCandidate)
         fun onIceConnectionChange(iceConnectionState: IceConnectionState)
         fun onRenegotiationNeeded()

@@ -21,7 +21,6 @@ import okhttp3.tls.HandshakeCertificates
 import java.security.cert.Certificate
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import java.util.concurrent.Executors
 
 @SuppressLint("SetTextI18n")
 class SocketActivity : AppCompatActivity(), SocketStateListener {
@@ -38,8 +37,6 @@ class SocketActivity : AppCompatActivity(), SocketStateListener {
     private val handler by lazy(LazyThreadSafetyMode.NONE) {
         HandlerCompat.createAsync(Looper.getMainLooper())
     }
-
-    private val executor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +57,7 @@ class SocketActivity : AppCompatActivity(), SocketStateListener {
                     socketRepository = SocketClient.getInstance()
 
                     socketRepository?.create(
-                        BuildConfig.SOCKET_BASE_URL,
+                        BuildConfig.SOCKET_URL,
                         okHttpClient = OkHttpClient.Builder()
                             .apply {
                                 var handshakeCertificates: HandshakeCertificates? = null
@@ -104,10 +101,6 @@ class SocketActivity : AppCompatActivity(), SocketStateListener {
     override fun onDestroy() {
         super.onDestroy()
 
-        if (!executor.isShutdown) {
-            executor.shutdown()
-        }
-
         socketRepository?.removeAllListeners()
         socketRepository?.release()
         socketRepository?.disconnect()
@@ -134,10 +127,8 @@ class SocketActivity : AppCompatActivity(), SocketStateListener {
     override fun onSocketDisconnect() {
         Log.d(TAG, "onSocketDisconnect()")
 
-        executor.execute {
-            socketRepository?.release()
-            socketRepository = null
-        }
+        socketRepository?.release()
+        socketRepository = null
 
         handler.post {
             statusView.text = "Status: Disconnected"

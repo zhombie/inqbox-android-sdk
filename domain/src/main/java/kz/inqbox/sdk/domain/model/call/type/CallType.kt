@@ -10,7 +10,7 @@ enum class CallType constructor(val value: String) : Parcelable {
     VIDEO("video");
 
     companion object {
-        fun from(value: String): CallType? =
+        fun from(value: String?): CallType? =
             when (value) {
                 TEXT.value -> TEXT
                 AUDIO.value -> AUDIO
