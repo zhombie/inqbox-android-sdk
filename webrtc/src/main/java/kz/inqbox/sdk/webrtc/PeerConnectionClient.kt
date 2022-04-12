@@ -381,25 +381,23 @@ class PeerConnectionClient private constructor(
             return false
         }
 
-        executor.execute {
-            remoteMediaStream = mediaStream
+        remoteMediaStream = mediaStream
 
-            if (mediaStream.audioTracks.isNotEmpty()) {
-                remoteAudioTrack = mediaStream.audioTracks.first()
-                remoteAudioTrack?.setEnabled(options.isRemoteAudioEnabled)
-            }
+        if (mediaStream.audioTracks.isNotEmpty()) {
+            remoteAudioTrack = mediaStream.audioTracks.first()
+            remoteAudioTrack?.setEnabled(options.isRemoteAudioEnabled)
+        }
 
-            if (mediaStream.videoTracks.isNotEmpty()) {
-                remoteVideoTrack = mediaStream.videoTracks.first()
-                remoteVideoTrack?.setEnabled(options.isRemoteVideoEnabled)
+        if (mediaStream.videoTracks.isNotEmpty()) {
+            remoteVideoTrack = mediaStream.videoTracks.first()
+            remoteVideoTrack?.setEnabled(options.isRemoteVideoEnabled)
 
-                if (remoteSurfaceViewRenderer == null) {
-                    Logger.error(TAG, "Remote SurfaceViewRenderer is null.")
-                } else {
-                    remoteVideoSink = ProxyVideoSink("RemoteVideoSink")
-                    remoteVideoSink?.setTarget(remoteSurfaceViewRenderer)
-                    remoteVideoTrack?.addSink(remoteVideoSink)
-                }
+            if (remoteSurfaceViewRenderer == null) {
+                Logger.error(TAG, "Remote SurfaceViewRenderer is null.")
+            } else {
+                remoteVideoSink = ProxyVideoSink("RemoteVideoSink")
+                remoteVideoSink?.setTarget(remoteSurfaceViewRenderer)
+                remoteVideoTrack?.addSink(remoteVideoSink)
             }
         }
 
@@ -425,48 +423,46 @@ class PeerConnectionClient private constructor(
             return null
         }
 
-        return executor.submit(Callable {
-            surfaceTextureHelper =
-                SurfaceTextureHelper.create("CaptureThread", eglBase?.eglBaseContext)
+        surfaceTextureHelper = SurfaceTextureHelper
+            .create("CaptureThread", eglBase?.eglBaseContext)
 
-            localVideoSource = peerConnectionFactory?.createVideoSource(false)
+        localVideoSource = peerConnectionFactory?.createVideoSource(false)
 
-            if (localVideoSource == null) {
-                Logger.error(TAG, "Local VideoSource is null.")
-                return@Callable null
-            }
+        if (localVideoSource == null) {
+            Logger.error(TAG, "Local VideoSource is null.")
+            return null
+        }
 
-            localVideoCapturer = try {
-                createVideoCapturer()
-            } catch (e: Exception) {
-                listener?.onLocalVideoCapturerCreateError(e)
-                return@Callable null
-            }
+        localVideoCapturer = try {
+            createVideoCapturer()
+        } catch (e: Exception) {
+            listener?.onLocalVideoCapturerCreateError(e)
+            return null
+        }
 
-            localVideoCapturer?.initialize(
-                surfaceTextureHelper,
-                context,
-                localVideoSource?.capturerObserver
-            )
+        localVideoCapturer?.initialize(
+            surfaceTextureHelper,
+            context,
+            localVideoSource?.capturerObserver
+        )
 
-            localVideoCapturer?.startCapture(
-                options.localVideoWidth,
-                options.localVideoHeight,
-                options.localVideoFPS
-            )
+        localVideoCapturer?.startCapture(
+            options.localVideoWidth,
+            options.localVideoHeight,
+            options.localVideoFPS
+        )
 
-            localVideoTrack = peerConnectionFactory?.createVideoTrack(
-                options.localVideoTrackId,
-                localVideoSource
-            )
-            localVideoTrack?.setEnabled(options.isLocalVideoEnabled)
+        localVideoTrack = peerConnectionFactory?.createVideoTrack(
+            options.localVideoTrackId,
+            localVideoSource
+        )
+        localVideoTrack?.setEnabled(options.isLocalVideoEnabled)
 
-            localVideoSink = ProxyVideoSink("LocalVideoSink")
-            localVideoSink?.setTarget(localSurfaceViewRenderer)
-            localVideoTrack?.addSink(localVideoSink)
+        localVideoSink = ProxyVideoSink("LocalVideoSink")
+        localVideoSink?.setTarget(localSurfaceViewRenderer)
+        localVideoTrack?.addSink(localVideoSink)
 
-            return@Callable localVideoTrack
-        }).get()
+        return localVideoTrack
     }
 
     private fun createAudioTrack(): AudioTrack? {
@@ -474,17 +470,15 @@ class PeerConnectionClient private constructor(
 
         Logger.debug(TAG, "Audio constraints: ${getAudioMediaConstraints()}")
 
-        return executor.submit(Callable {
-            localAudioSource = peerConnectionFactory?.createAudioSource(getAudioMediaConstraints())
+        localAudioSource = peerConnectionFactory?.createAudioSource(getAudioMediaConstraints())
 
-            localAudioTrack = peerConnectionFactory?.createAudioTrack(
-                options.localAudioTrackId,
-                localAudioSource
-            )
-            localAudioTrack?.setEnabled(options.isLocalAudioEnabled)
+        localAudioTrack = peerConnectionFactory?.createAudioTrack(
+            options.localAudioTrackId,
+            localAudioSource
+        )
+        localAudioTrack?.setEnabled(options.isLocalAudioEnabled)
 
-            return@Callable localAudioTrack
-        }).get()
+        return localAudioTrack
     }
 
     private fun createVideoCapturer(): VideoCapturer? {
