@@ -703,44 +703,39 @@ class PeerConnectionClient private constructor(
         }
     }
 
-    fun setLocalAudioEnabled(isEnabled: Boolean): Boolean {
-        return executor.submit(Callable {
+    fun setLocalAudioEnabled(isEnabled: Boolean): Boolean =
+        executor.submit(Callable {
             options.isLocalAudioEnabled = isEnabled
             localAudioTrack?.setEnabled(options.isLocalAudioEnabled)
         }).get() == true
-    }
 
-    fun setRemoteAudioEnabled(isEnabled: Boolean): Boolean {
-        return executor.submit(Callable {
+    fun setRemoteAudioEnabled(isEnabled: Boolean): Boolean =
+        executor.submit(Callable {
             options.isRemoteAudioEnabled = isEnabled
             remoteAudioTrack?.setEnabled(options.isRemoteAudioEnabled)
         }).get() == true
-    }
 
-    fun setLocalVideoEnabled(isEnabled: Boolean): Boolean {
-        return executor.submit(Callable {
+    fun setLocalVideoEnabled(isEnabled: Boolean): Boolean =
+        executor.submit(Callable {
             options.isLocalVideoEnabled = isEnabled
             localVideoTrack?.setEnabled(options.isLocalVideoEnabled)
         }).get() == true
-    }
 
-    fun setRemoteVideoEnabled(isEnabled: Boolean): Boolean {
-        return executor.submit(Callable {
+    fun setRemoteVideoEnabled(isEnabled: Boolean): Boolean =
+        executor.submit(Callable {
             options.isRemoteVideoEnabled = isEnabled
             remoteVideoTrack?.setEnabled(options.isRemoteVideoEnabled)
         }).get() == true
-    }
 
-    fun addStream(mediaStream: MediaStream): Boolean {
-        return peerConnection?.addStream(mediaStream) == true
-    }
+    fun addStream(mediaStream: MediaStream): Boolean =
+        peerConnection?.addStream(mediaStream) == true
 
     fun removeStream(mediaStream: MediaStream) {
         peerConnection?.removeStream(mediaStream)
     }
 
-    fun removeMediaStreamTrack(mediaStreamTrack: MediaStreamTrack): Boolean {
-        return when {
+    fun removeMediaStreamTrack(mediaStreamTrack: MediaStreamTrack): Boolean =
+        when {
             mediaStreamTrack.kind() == MediaStreamTrack.AUDIO_TRACK_KIND -> {
                 remoteMediaStream?.removeTrack(remoteAudioTrack) == true
             }
@@ -751,7 +746,6 @@ class PeerConnectionClient private constructor(
                 false
             }
         }
-    }
 
     fun setLocalAudioTrackVolume(volume: Double) {
         localAudioTrack?.setVolume(volume)
@@ -860,31 +854,23 @@ class PeerConnectionClient private constructor(
     }
 
     fun startLocalVideoCapture() {
-        executor.execute {
-            localVideoCapturer?.startCapture(
-                options.localVideoWidth,
-                options.localVideoHeight,
-                options.localVideoFPS
-            )
-        }
+        localVideoCapturer?.startCapture(
+            options.localVideoWidth,
+            options.localVideoHeight,
+            options.localVideoFPS
+        )
     }
 
     fun stopLocalVideoCapture() {
-        executor.execute {
-            localVideoCapturer?.stopCapture()
-        }
+        localVideoCapturer?.stopCapture()
     }
 
     fun setLocalVideoStreamMirror(isMirrored: Boolean) {
-        executor.execute {
-            localSurfaceViewRenderer?.setMirror(isMirrored)
-        }
+        localSurfaceViewRenderer?.setMirror(isMirrored)
     }
 
     fun setRemoteVideoStreamMirror(isMirrored: Boolean) {
-        executor.execute {
-            remoteSurfaceViewRenderer?.setMirror(isMirrored)
-        }
+        remoteSurfaceViewRenderer?.setMirror(isMirrored)
     }
 
     fun getAudioOutputDevices(): Set<RTCAudioManager.AudioDevice>? =
@@ -1049,22 +1035,24 @@ class PeerConnectionClient private constructor(
 //            }
         }
 
-        executor.shutdown()
+//        executor.shutdown()
 
         return true
     }
 
+    fun shutdown() {
+        executor.shutdown()
+    }
+
     private fun reportError(errorMessage: String) {
-        Logger.error(TAG, "PeerConnection error: $errorMessage")
-        executor.execute {
-            listener?.onPeerConnectionError(errorMessage)
-        }
+        Logger.error(TAG, "reportError() -> errorMessage: $errorMessage")
+        listener?.onPeerConnectionError(errorMessage)
     }
 
     private inner class InnerSdpObserver : SdpObserver {
 
         override fun onCreateSuccess(sessionDescription: SessionDescription?) {
-            Logger.debug(TAG, "onCreateSuccess: $sessionDescription")
+            Logger.debug(TAG, "onCreateSuccess() -> $sessionDescription")
 
             if (sessionDescription == null) return
 
