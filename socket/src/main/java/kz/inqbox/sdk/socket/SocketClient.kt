@@ -6,6 +6,7 @@ import io.socket.client.Ack
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import kz.garage.chat.model.Entity
 import kz.garage.chat.model.Message
 import kz.garage.chat.model.reply_markup.InlineReplyMarkup
 import kz.garage.chat.model.reply_markup.ReplyMarkup
@@ -332,9 +333,18 @@ class SocketClient private constructor() : SocketRepository {
 
                     if (callInitialization.device.battery != null) {
                         put("battery", jsonObject {
-                            putIfValueNotNull("percentage", callInitialization.device.battery.percentage)
-                            putIfValueNotNull("is_charging", callInitialization.device.battery.isCharging)
-                            putIfValueNotNull("temperature", callInitialization.device.battery.temperature)
+                            putIfValueNotNull(
+                                "percentage",
+                                callInitialization.device.battery.percentage
+                            )
+                            putIfValueNotNull(
+                                "is_charging",
+                                callInitialization.device.battery.isCharging
+                            )
+                            putIfValueNotNull(
+                                "temperature",
+                                callInitialization.device.battery.temperature
+                            )
                         })
                     }
                 })
@@ -456,10 +466,12 @@ class SocketClient private constructor() : SocketRepository {
 
         emit(Event.Outgoing.MESSAGE, jsonObject {
             put("rtc", jsonObject {
-                put("type", when (sessionDescription.type) {
-                    SessionDescription.Type.OFFER -> "offer"
-                    SessionDescription.Type.ANSWER -> "answer"
-                })
+                put(
+                    "type", when (sessionDescription.type) {
+                        SessionDescription.Type.OFFER -> "offer"
+                        SessionDescription.Type.ANSWER -> "answer"
+                    }
+                )
                 put("sdp", sessionDescription.description)
             })
         }) {}
@@ -599,17 +611,19 @@ class SocketClient private constructor() : SocketRepository {
 
             val formJSONObject = jsonObject.getJSONObject("form")
 
-            val fields = jsonObject.getJSONArrayOrNull("form_fields")?.mapNotNull<JSONObject, Form.Field> {
-                Form.Field(
-                    id = it.getLong("id"),
-                    title = it.getStringOrNull("title") ?: return@mapNotNull null,
-                    prompt = it.getStringOrNull("prompt"),
-                    type = findEnumBy { type -> type.key == it.getString("type") } ?: return@mapNotNull null,
-                    defaultValue = it.getStringOrNull("default"),
-                    configs = null,
-                    level = it.optInt("level", -1),
-                )
-            }
+            val fields =
+                jsonObject.getJSONArrayOrNull("form_fields")?.mapNotNull<JSONObject, Form.Field> {
+                    Form.Field(
+                        id = it.getLong("id"),
+                        title = it.getStringOrNull("title") ?: return@mapNotNull null,
+                        prompt = it.getStringOrNull("prompt"),
+                        type = findEnumBy { type -> type.key == it.getString("type") }
+                            ?: return@mapNotNull null,
+                        defaultValue = it.getStringOrNull("default"),
+                        configs = null,
+                        level = it.optInt("level", -1),
+                    )
+                }
 
             val form = Form(
                 id = formJSONObject.getLong("id"),
@@ -667,19 +681,20 @@ class SocketClient private constructor() : SocketRepository {
             val text = jsonObject.optString("text")
             val chatId = jsonObject.optLong("chat_id", -1)
 
-            val rateButtons = jsonObject.getJSONArrayOrNull("buttons")?.mapNotNull<JSONObject, RateButton> {
-                val payload = it.getStringOrNull("payload")
-                val rating = if (payload.isNullOrBlank()) {
-                    null
-                } else {
-                    payload.split(":").getOrNull(1)?.toIntOrNull()
+            val rateButtons =
+                jsonObject.getJSONArrayOrNull("buttons")?.mapNotNull<JSONObject, RateButton> {
+                    val payload = it.getStringOrNull("payload")
+                    val rating = if (payload.isNullOrBlank()) {
+                        null
+                    } else {
+                        payload.split(":").getOrNull(1)?.toIntOrNull()
+                    }
+                    RateButton(
+                        text = it.optString("title"),
+                        chatId = chatId,
+                        rating = rating ?: return@mapNotNull null
+                    )
                 }
-                RateButton(
-                    text = it.optString("title"),
-                    chatId = chatId,
-                    rating = rating ?: return@mapNotNull null
-                )
-            }
 
             listenerInfo.callListener?.onCallFeedback(
                 text = text,
@@ -713,23 +728,24 @@ class SocketClient private constructor() : SocketRepository {
             val replyMarkupJSONObject = jsonObject.optJSONObject("reply_markup")
             val formJSONObject = jsonObject.optJSONObject("form")
 
-            val rows = replyMarkupJSONObject?.optJSONArray("inline_keyboard")?.map<JSONArray, ReplyMarkup.Row> { rowsJSONArray ->
-                val buttons = rowsJSONArray.map<JSONObject, Button> { buttonJSONObject ->
-                    val buttonText = buttonJSONObject.getString("text")
-                    val buttonCallbackData = buttonJSONObject.getStringOrNull("callback_data")
-                    val buttonUrl = buttonJSONObject.getStringOrNull("url")
-                    when {
-                        !buttonCallbackData.isNullOrBlank() ->
-                            CallbackButton(text = buttonText, payload = buttonCallbackData)
-                        !buttonUrl.isNullOrBlank() ->
-                            URLButton(text = buttonText, url = buttonUrl)
-                        else ->
-                            TextButton(text = buttonText)
+            val rows = replyMarkupJSONObject?.optJSONArray("inline_keyboard")
+                ?.map<JSONArray, ReplyMarkup.Row> { rowsJSONArray ->
+                    val buttons = rowsJSONArray.map<JSONObject, Button> { buttonJSONObject ->
+                        val buttonText = buttonJSONObject.getString("text")
+                        val buttonCallbackData = buttonJSONObject.getStringOrNull("callback_data")
+                        val buttonUrl = buttonJSONObject.getStringOrNull("url")
+                        when {
+                            !buttonCallbackData.isNullOrBlank() ->
+                                CallbackButton(text = buttonText, payload = buttonCallbackData)
+                            !buttonUrl.isNullOrBlank() ->
+                                URLButton(text = buttonText, url = buttonUrl)
+                            else ->
+                                TextButton(text = buttonText)
+                        }
                     }
-                }
 
-                ReplyMarkup.Row(buttons)
-            }
+                    ReplyMarkup.Row(buttons)
+                }
             val replyMarkup = if (rows.isNullOrEmpty()) null else InlineReplyMarkup(rows = rows)
 
             if (!text.isNullOrBlank()) {
@@ -842,54 +858,58 @@ class SocketClient private constructor() : SocketRepository {
                 listenerInfo.callListener?.onPendingUsersQueueCount(text, queued)
             }
 
-            val attachments = jsonObject.getJSONArrayOrNull("attachments")?.mapNotNull<JSONObject, Content> {
-                val hash = it.getStringOrNull("hash")
-                val title = it.getStringOrNull("title")
-                val url = it.getStringOrNull("url") ?: return@mapNotNull null
-                when (ContentType.from(it.getStringOrNull("type")) ?: return@mapNotNull null) {
-                    ContentType.IMAGE -> {
-                        Image(
-                            id = hash,
-                            title = title,
-                            remoteFile = Content.RemoteFile(url)
-                        )
-                    }
-                    ContentType.VIDEO -> {
-                        Video(
-                            id = hash,
-                            title = title,
-                            remoteFile = Content.RemoteFile(url)
-                        )
-                    }
-                    ContentType.AUDIO -> {
-                        Audio(
-                            id = hash,
-                            title = title,
-                            remoteFile = Content.RemoteFile(url)
-                        )
-                    }
-                    ContentType.DOCUMENT -> {
-                        Document(
-                            id = hash,
-                            title = title,
-                            remoteFile = Content.RemoteFile(url)
-                        )
-                    }
-                    else -> {
-                        Logger.error(TAG, "Unsupported type of message attachment")
-                        null
+            val attachments =
+                jsonObject.getJSONArrayOrNull("attachments")?.mapNotNull<JSONObject, Content> {
+                    val hash = it.getStringOrNull("hash")
+                    val title = it.getStringOrNull("title")
+                    val url = it.getStringOrNull("url") ?: return@mapNotNull null
+                    when (ContentType.from(it.getStringOrNull("type")) ?: return@mapNotNull null) {
+                        ContentType.IMAGE -> {
+                            Image(
+                                id = hash,
+                                title = title,
+                                remoteFile = Content.RemoteFile(url)
+                            )
+                        }
+                        ContentType.VIDEO -> {
+                            Video(
+                                id = hash,
+                                title = title,
+                                remoteFile = Content.RemoteFile(url)
+                            )
+                        }
+                        ContentType.AUDIO -> {
+                            Audio(
+                                id = hash,
+                                title = title,
+                                remoteFile = Content.RemoteFile(url)
+                            )
+                        }
+                        ContentType.DOCUMENT -> {
+                            Document(
+                                id = hash,
+                                title = title,
+                                remoteFile = Content.RemoteFile(url)
+                            )
+                        }
+                        else -> {
+                            Logger.error(TAG, "Unsupported type of message attachment")
+                            null
+                        }
                     }
                 }
-            }
 
             val message = Message.Builder()
-                .setId(id)
+                .setId(id ?: Entity.generateId())
                 .setIncomingDirection()
                 .setCreatedAt(time)
                 .setBody(text)
                 .setReplyMarkup(replyMarkup)
                 .setContents(
-                    listOfNotNull(parseContent(jsonObject.getJSONObjectOrNull("media"))) + (attachments ?: emptyList()))
+                    listOfNotNull(
+                        parseContent(jsonObject.getJSONObjectOrNull("media"))
+                    ) + (attachments ?: emptyList())
+                )
                 .build()
 
             if (formJSONObject?.has("id") == true) {
@@ -924,7 +944,9 @@ class SocketClient private constructor() : SocketRepository {
                 return Category(
                     id = jsonObject.getLongOrNull("id") ?: return null,
                     title = jsonObject.getStringOrNull("title")?.trim(),
-                    language = findEnumBy { it.value == jsonObject.getLongOrNull("lang") } ?: Language.ID.RU,
+                    language = findEnumBy {
+                        it.value == jsonObject.getLongOrNull("lang")
+                    } ?: Language.ID.RU,
                     parentId = jsonObject.getLongOrNull("parent_id") ?: Category.NO_PARENT_ID,
                     photo = jsonObject.getStringOrNull("photo"),
                     responses = responses,
@@ -934,11 +956,14 @@ class SocketClient private constructor() : SocketRepository {
                 )
             }
 
-            val categories = jsonObject.optJSONArray("category_list")?.mapNotNull<JSONObject, Category> { categoryJSONObject ->
-                parse(categoryJSONObject)
-            }
+            val categories = jsonObject.optJSONArray("category_list")
+                ?.mapNotNull<JSONObject, Category> { categoryJSONObject ->
+                    parse(categoryJSONObject)
+                }
 
-            listenerInfo.chatBotListener?.onCategories(categories?.sortedBy { it.config?.order } ?: emptyList())
+            listenerInfo.chatBotListener?.onCategories(
+                categories?.sortedBy { it.config?.order } ?: emptyList()
+            )
         }
     }
 

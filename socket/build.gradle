@@ -7,7 +7,7 @@ android {
 }
 
 ext {
-    garage_version = '1.2.7'
+    garage_version = '1.3.0'
 }
 
 dependencies {
@@ -22,6 +22,7 @@ dependencies {
     api 'com.squareup.okhttp3:okhttp:4.9.3'
 
     // Socket.io
+    // Version of dependency MUST be the same as server-side
     api ('io.socket:socket.io-client:1.0.1') {
         // excluding org.json which is provided by Android
         exclude group: 'org.json', module: 'json'

@@ -11,7 +11,7 @@ dependencies {
     // WebRTC
 //    implementation 'org.webrtc:google-webrtc:1.0.32006'  // Remote repository is outdated
 //    api 'ch.threema:webrtc-android:91.0.1'               // Remote repository is customized
-    api 'com.github.webrtc-sdk:android:97.4692.01'
+    api 'com.github.webrtc-sdk:android:97.4692.04'
 
     // InQBox (SDK)
     implementation project(":domain")
