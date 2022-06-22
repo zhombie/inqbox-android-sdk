@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="kz.inqbox.sdk.sample">
+    package="kz.qbox.sdk.sample">
 
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:name=".SampleApplication"
+        android:name="kz.qbox.sdk.sample.SampleApplication"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.InQBox">
+        android:theme="@style/Theme.QBox">
 
         <!-- Entry Point -->
         <activity
-            android:name=".MainActivity"
+            android:name="kz.qbox.sdk.sample.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,11 +22,11 @@
         </activity>
 
         <!-- socket -->
-        <activity android:name=".samples.socket.SocketActivity" />
+        <activity android:name="kz.qbox.sdk.sample.samples.socket.SocketActivity" />
 
         <!-- webrtc -->
-        <activity android:name=".samples.webrtc.WebRTCActivity" />
-        <activity android:name=".samples.webrtc.PreviewActivity" />
+        <activity android:name="kz.qbox.sdk.sample.samples.webrtc.WebRTCActivity" />
+        <activity android:name="kz.qbox.sdk.sample.samples.webrtc.PreviewActivity" />
 
     </application>
 

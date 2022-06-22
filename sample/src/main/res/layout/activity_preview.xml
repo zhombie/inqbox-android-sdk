@@ -5,12 +5,12 @@
     android:layout_height="match_parent"
     tools:context=".samples.webrtc.PreviewActivity">
 
-    <kz.inqbox.sdk.webrtc.core.ui.SurfaceViewRenderer
+    <kz.qbox.sdk.webrtc.core.ui.SurfaceViewRenderer
         android:id="@+id/fullSurfaceViewRenderer"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <kz.inqbox.sdk.webrtc.core.ui.SurfaceViewRenderer
+    <kz.qbox.sdk.webrtc.core.ui.SurfaceViewRenderer
         android:id="@+id/miniSurfaceViewRenderer"
         android:layout_width="150dp"
         android:layout_height="200dp"
@@ -33,7 +33,8 @@
                 android:id="@+id/startOrStopButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:text="Start/stop"
                 tools:ignore="HardcodedText" />
 
@@ -41,7 +42,8 @@
                 android:id="@+id/mirrorButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:text="Mirror"
                 tools:ignore="HardcodedText" />
 
@@ -66,7 +68,8 @@
                 android:id="@+id/shutdownButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:text="Shutdown"
                 tools:ignore="HardcodedText" />
 

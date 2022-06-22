@@ -7,7 +7,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'InQBox'
+rootProject.name = 'QBox-SDK'
 
 include ':sample'
 

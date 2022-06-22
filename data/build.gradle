@@ -12,6 +12,6 @@ dependencies {
     // Retrofit + Gson
     implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
 
-    // InQBox (SDK)
+    // QBox (SDK)
     implementation project(":domain")
 }

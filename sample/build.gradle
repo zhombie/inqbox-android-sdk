@@ -9,13 +9,13 @@ properties.load(new FileInputStream(rootProject.file('local.properties')))
 def socketUrl = properties.getProperty('socket.url') ?: '"http://localhost"'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     defaultConfig {
-        applicationId "kz.inqbox.sdk.sample"
+        applicationId "kz.qbox.sdk.sample"
 
         minSdkVersion 23
-        targetSdkVersion 31
+        targetSdkVersion 33
 
         versionCode project.ext.version_code
         versionName project.version
